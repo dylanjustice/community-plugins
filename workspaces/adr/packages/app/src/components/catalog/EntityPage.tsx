@@ -32,7 +32,10 @@ import {
   isKind,
   isOrphan,
 } from '@backstage/plugin-catalog';
-import { EntitySonarQubeCard } from '@backstage-community/plugin-sonarqube';
+import {
+  EntityAdrContent,
+  isAdrAvailable,
+} from '@backstage-community/plugin-adr';
 import {
   EntityGroupProfileCard,
   EntityMembersListCard,
@@ -98,9 +101,6 @@ const overviewContent = (
     <Grid item md={6}>
       <EntityAboutCard variant="gridItem" />
     </Grid>
-    <Grid item md={6}>
-      <EntitySonarQubeCard variant="gridItem" />
-    </Grid>
   </Grid>
 );
 
@@ -113,6 +113,9 @@ const serviceEntityPage = (
     <EntityLayout.Route path="/ci-cd" title="CI/CD">
       {cicdContent}
     </EntityLayout.Route>
+    <EntityLayout.Route if={isAdrAvailable} path="/adrs" title="ADRs">
+      <EntityAdrContent />
+    </EntityLayout.Route>
   </EntityLayout>
 );
 
@@ -124,6 +127,9 @@ const websiteEntityPage = (
 
     <EntityLayout.Route path="/ci-cd" title="CI/CD">
       {cicdContent}
+    </EntityLayout.Route>
+    <EntityLayout.Route if={isAdrAvailable} path="/adrs" title="ADRs">
+      <EntityAdrContent />
     </EntityLayout.Route>
   </EntityLayout>
 );
