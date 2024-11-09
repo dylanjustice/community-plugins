@@ -3,8 +3,6 @@ kind: Component
 metadata:
   name: adr
   description: An example of a Backstage application.
-  annotations:
-    backstage.io/adr-location: doc/adr
 spec:
   type: website
   owner: john@example.com
