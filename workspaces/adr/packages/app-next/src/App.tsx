@@ -39,8 +39,6 @@ import { Navigate, Route } from 'react-router';
 import { navigationExtension } from './components/Sidebar';
 import { SignInPage } from '@backstage/core-components';
 
-import sonarQubePlugin from '@backstage-community/plugin-sonarqube/alpha';
-
 const signInPage = SignInPageBlueprint.make({
   params: {
     loader: async () => props =>
@@ -85,7 +83,6 @@ export const app = createApp({
     catalogPlugin,
     catalogImportPlugin,
     userSettingsPlugin,
-    sonarQubePlugin,
     ...collectedLegacyPlugins,
     createFrontendModule({
       pluginId: 'app',
