@@ -23,3 +23,8 @@ export type AdrContentDecorator = (adrInfo: {
   baseUrl: string;
   content: string;
 }) => { content: string };
+
+export type AdrContentDecoratorAsync = (adrInfo: {
+  baseUrl: string;
+  content: string;
+}) => Promise<{ content: string }>;

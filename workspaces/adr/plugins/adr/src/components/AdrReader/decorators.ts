@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 import { parseMadrWithFrontmatter } from '@backstage-community/plugin-adr-common';
-import { AdrContentDecorator } from './types';
+import { AdrContentDecorator, AdrContentDecoratorAsync } from './types';
+import mermaid from 'mermaid';
 
 /**
  *
@@ -64,4 +65,61 @@ export const adrDecoratorFactories = Object.freeze({
       return { content: table + parsedFrontmatter.content };
     };
   },
+  /**
+   * Formats mermaid code fences as mermaidjs rendered diagrams
+   * @returns
+   */
+  createMermaidDiagramDecorator(): AdrContentDecorator {
+    return ({ content }) => {
+      const value = preprocessAdrContent(content);
+      return { content: value };
+    };
+  },
+
+  createMermaidDiagramDecoratorAsync(): AdrContentDecoratorAsync {
+    return async (adrInfo: { baseUrl: string; content: string }) => {
+      const value = await preprocessAdrContentAsync(adrInfo.content);
+      return { content: value };
+    };
+  },
 });
+
+async function preprocessAdrContentAsync(content: string): Promise<string> {
+  const regex = /```mermaid\s([\s\S]*?)```/g;
+  const matches = [...content.matchAll(regex)];
+
+  let replacedContent = content;
+
+  for (const match of matches) {
+    const [fullMatch, _] = match;
+
+    try {
+      await mermaid.run({ querySelector: 'pre.mermaid' });
+      replacedContent = replacedContent.replace(fullMatch, '');
+    } catch (error) {
+      return content;
+    }
+  }
+
+  return replacedContent;
+}
+
+function preprocessAdrContent(content: string): string {
+  const regex = /```mermaid\s([\s\S]*?)```/g;
+  const matches = [...content.matchAll(regex)];
+
+  let replacedContent = content;
+
+  for (const match of matches) {
+    const [fullMatch, diagramCode] = match;
+
+    const diagramBlock = [
+      "\\<pre class='mermaid'\\>",
+      diagramCode,
+      '\\</pre\\>',
+    ].join('\n');
+    replacedContent = replacedContent.replace(fullMatch, diagramBlock);
+  }
+
+  return replacedContent;
+}

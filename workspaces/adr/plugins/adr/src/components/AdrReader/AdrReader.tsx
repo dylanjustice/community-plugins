@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   InfoCard,
-  MarkdownContent,
   Progress,
   WarningPanel,
+  MarkdownContent,
+  Header,
 } from '@backstage/core-components';
 import { discoveryApiRef, useApi } from '@backstage/core-plugin-api';
 import { scmIntegrationsApiRef } from '@backstage/integration-react';
@@ -28,9 +29,10 @@ import { useEntity } from '@backstage/plugin-catalog-react';
 import { CookieAuthRefreshProvider } from '@backstage/plugin-auth-react';
 
 import { adrDecoratorFactories } from './decorators';
-import { AdrContentDecorator } from './types';
+import { AdrContentDecorator, AdrContentDecoratorAsync } from './types';
 import { adrApiRef } from '../../api';
 import useAsync from 'react-use/esm/useAsync';
+import mermaid from 'mermaid';
 
 /**
  * Component to fetch and render an ADR.
@@ -40,15 +42,19 @@ import useAsync from 'react-use/esm/useAsync';
 export const AdrReader = (props: {
   adr: string;
   decorators?: AdrContentDecorator[];
+  asyncDecorators?: AdrContentDecoratorAsync[];
 }) => {
-  const { adr, decorators } = props;
+  const { adr, decorators, asyncDecorators } = props;
   const { entity } = useEntity();
   const scmIntegrations = useApi(scmIntegrationsApiRef);
   const adrApi = useApi(adrApiRef);
   const adrLocationUrl = getAdrLocationUrl(entity, scmIntegrations);
   const adrFileLocationUrl = getAdrLocationUrl(entity, scmIntegrations, adr);
   const discoveryApi = useApi(discoveryApiRef);
-
+  const [adrContent, setAdrContent] = useState<string>('');
+  const [runMermaid, setRunMermaid] = useState(true);
+  const [decoratorError, setDecoratorError] = useState<Error | null>(null);
+  const [mermaidErr, setMermaidErr] = useState<Error | null>(null);
   const { value, loading, error } = useAsync(
     async () => adrApi.readAdr(adrFileLocationUrl),
     [adrFileLocationUrl],
@@ -59,22 +65,57 @@ export const AdrReader = (props: {
     loading: backendUrlLoading,
     error: backendUrlError,
   } = useAsync(async () => discoveryApi.getBaseUrl('adr'), []);
-  const adrContent = useMemo(() => {
+
+  useEffect(() => {
     if (!value?.data) {
-      return '';
+      setAdrContent('');
+      return;
     }
+
     const adrDecorators = decorators ?? [
       adrDecoratorFactories.createRewriteRelativeLinksDecorator(),
       adrDecoratorFactories.createRewriteRelativeEmbedsDecorator(),
       adrDecoratorFactories.createFrontMatterFormatterDecorator(),
     ];
+    const asyncAdrDecorators =
+      asyncDecorators ??
+      [
+        // adrDecoratorFactories.createMermaidDiagramDecoratorAsync(),
+      ];
 
-    return adrDecorators.reduce(
-      (content, decorator) =>
-        decorator({ baseUrl: adrLocationUrl, content }).content,
-      value.data,
-    );
-  }, [adrLocationUrl, decorators, value]);
+    const processDecorators = async () => {
+      let content = value.data;
+
+      for (const decorator of asyncAdrDecorators) {
+        const result = await decorator({ baseUrl: adrLocationUrl, content });
+        content = result.content;
+      }
+      for (const decorator of adrDecorators) {
+        const result = decorator({ baseUrl: adrLocationUrl, content });
+        content = result.content;
+      }
+
+      setAdrContent(content); // Update state with the final content
+    };
+
+    processDecorators().catch(err => {
+      setDecoratorError(err);
+    });
+  }, [adrLocationUrl, decorators, asyncDecorators, value]);
+
+  useEffect(() => {
+    if (!runMermaid || adrContent === '') return;
+    const element = document.querySelector('code.language-text');
+    if (!element) return;
+    const mermaidRun = async () => {
+      mermaid.run({
+        querySelector: 'code.language-text',
+        postRenderCallback: () => setRunMermaid(false),
+        suppressErrors: true,
+      });
+    };
+    mermaidRun().catch(err => setMermaidErr(Error(err)));
+  }, [runMermaid, adrContent]);
 
   return (
     <CookieAuthRefreshProvider pluginId="adr">
@@ -97,13 +138,15 @@ export const AdrReader = (props: {
           !error &&
           !backendUrlError &&
           value?.data && (
-            <MarkdownContent
-              content={adrContent}
-              linkTarget="_blank"
-              transformImageUri={href => {
-                return `${backendUrl}/image?url=${href}`;
-              }}
-            />
+            <>
+              <MarkdownContent
+                content={adrContent}
+                linkTarget="_blank"
+                transformImageUri={href => {
+                  return `${backendUrl}/image?url=${href}`;
+                }}
+              />
+            </>
           )}
       </InfoCard>
     </CookieAuthRefreshProvider>

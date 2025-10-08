@@ -33,6 +33,7 @@ import {
   isOrphan,
 } from '@backstage/plugin-catalog';
 import {
+  AdrReader,
   EntityAdrContent,
   isAdrAvailable,
 } from '@backstage-community/plugin-adr';
@@ -129,7 +130,14 @@ const websiteEntityPage = (
       {cicdContent}
     </EntityLayout.Route>
     <EntityLayout.Route if={isAdrAvailable} path="/adrs" title="ADRs">
-      <EntityAdrContent />
+      <EntityAdrContent
+        contentDecorators={[
+          AdrReader.decorators.createFrontMatterFormatterDecorator(),
+          AdrReader.decorators.createRewriteRelativeEmbedsDecorator(),
+          AdrReader.decorators.createRewriteRelativeLinksDecorator(),
+          // AdrReader.decorators.createMermaidDiagramDecorator(),
+        ]}
+      />
     </EntityLayout.Route>
   </EntityLayout>
 );

@@ -16,7 +16,11 @@ We will use Architecture Decision Records, as [described by Michael Nygard](http
 
 ```mermaid
 flowchart TD
-    Start --> Stop
+    A[Christmas] -->|Get money| B(Go shopping)
+    B --> C{Let me think}
+    C -->|One| D[Laptop]
+    C -->|Two| E[iPhone]
+    C -->|Three| F[fa:fa-car Car]
 ```
 
 ## Consequences
