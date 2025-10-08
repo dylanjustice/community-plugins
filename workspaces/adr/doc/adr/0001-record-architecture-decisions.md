@@ -14,6 +14,11 @@ We need to record the architectural decisions made on this project.
 
 We will use Architecture Decision Records, as [described by Michael Nygard](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions).
 
+<pre class='mermaid'>
+flowchart TD
+    Start --> Stop
+</pre>
+
 ```mermaid
 flowchart TD
     Start --> Stop
